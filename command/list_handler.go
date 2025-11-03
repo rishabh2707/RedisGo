@@ -1,6 +1,9 @@
 package command
 
 import (
+	"strconv"
+	"time"
+
 	"com.github.redisgo/database"
 	"com.github.redisgo/util"
 )
@@ -91,4 +94,50 @@ func (cmd *Cmd) handleLPopCommand() string {
 	ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
 	database.Store(key, ObjectList)
 	return util.ParseNormalResponse(poppedValue)
+}
+
+func (cmd *Cmd) handleBLPopCommand() string {
+	if len(cmd.Args) < 3 {
+		return "-ERR wrong number of arguments for 'blpop' command\r\n"
+	}
+
+	key := cmd.Args[1]
+	timeout, err := strconv.ParseFloat(cmd.Args[2], 64)
+	if err != nil {
+		return "-ERR invalid timeout\r\n"
+	}
+	timeoutInMilliseconds := float64(timeout * 1000)
+	lock := database.GetKeyLock(key)
+	defer lock.Unlock()
+
+	if timeoutInMilliseconds != float64(0) {
+		time.Sleep(time.Duration(timeoutInMilliseconds) * time.Millisecond)
+		lock.Lock()
+		ObjectList, ok := database.Get(key)
+		if !ok {
+			return util.ReturnNullResponse()
+		}
+		poppedValue := ObjectList.(*objectList).Value[0]
+		ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
+		database.Store(key, ObjectList)
+		return util.ParseNormalResponse(poppedValue)
+	}
+
+	for {
+		lock.Lock()
+		ObjectList, ok := database.Get(key)
+		if !ok {
+			lock.Unlock()
+			continue
+		}
+
+		if len(ObjectList.(*objectList).Value) > 0 {
+			poppedValue := ObjectList.(*objectList).Value[0]
+			ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
+			database.Store(key, ObjectList)
+			return util.ParseNormalResponse(poppedValue)
+		}
+		lock.Unlock()
+		time.Sleep(1 * time.Millisecond)
+	}
 }

@@ -26,6 +26,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleLLenCommand()
 	case "LPOP":
 		return cmnd.handleLPopCommand()
+	case "BLPOP":
+		return cmnd.handleBLPopCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}
