@@ -3,6 +3,7 @@ package command
 import (
 	"strings"
 
+	"com.github.redisgo/database"
 	"com.github.redisgo/util"
 )
 
@@ -28,6 +29,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleLPopCommand()
 	case "BLPOP":
 		return cmnd.handleBLPopCommand()
+	case "TYPE":
+		return cmnd.handleTypeCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}
@@ -39,4 +42,26 @@ func (cmnd *Cmd) handlePingCommand() string {
 
 func (cmnd *Cmd) handleEchoCommand() string {
 	return util.ParseNormalResponse(cmnd.Args[1])
+}
+
+func (cmnd *Cmd) handleTypeCommand() string {
+	if len(cmnd.Args) < 2 {
+		return "-ERR wrong number of arguments for 'type' command\r\n"
+	}
+
+	key := cmnd.Args[1]
+
+	value, ok := database.Get(key)
+	if !ok {
+		return util.ParseNormalResponse("none")
+	}
+
+	switch value.(type) {
+	case *object:
+		return util.ParseNormalResponse("string")
+	case *objectList:
+		return util.ParseNormalResponse("list")
+	default:
+		return util.ParseNormalResponse("none")
+	}
 }
