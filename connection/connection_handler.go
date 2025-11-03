@@ -26,17 +26,12 @@ func (h *ConnectionHandler) Handle() {
 		select {
 		case cmd := <-h.in:
 			fmt.Printf("[DEBUG] Received command: %s\r\n", cmd)
-			switch cmd.Name {
-			case "PING":
-				(*h.conn).Write([]byte("+PONG\r\n"))
-			default:
-				(*h.conn).Write([]byte("-ERR unknown command '" + cmd.Name + "'\r\n"))
-			}
+			response := cmd.Handle()
+			(*h.conn).Write([]byte(response))
 		default:
 			fmt.Println("[DEBUG] Quit signal received")
 		}
 	}
-
 }
 
 func (h *ConnectionHandler) read() {
