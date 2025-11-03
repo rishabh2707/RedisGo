@@ -28,8 +28,6 @@ func (h *ConnectionHandler) Handle() {
 			fmt.Printf("[DEBUG] Received command: %s\r\n", cmd)
 			response := cmd.Handle()
 			(*h.conn).Write([]byte(response))
-		default:
-			fmt.Println("[DEBUG] Quit signal received")
 		}
 	}
 }

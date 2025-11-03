@@ -1,7 +1,9 @@
 package command
 
+import "strings"
+
 func (cmnd *Cmd) Handle() string {
-	switch cmnd.Name {
+	switch strings.ToUpper(cmnd.Name) {
 	case "PING":
 		return cmnd.handlePingCommand()
 	default:
