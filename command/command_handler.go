@@ -22,6 +22,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleLPushCommand()
 	case "LRANGE":
 		return cmnd.handleLRangeCommand()
+	case "LLEN":
+		return cmnd.handleLLenCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}

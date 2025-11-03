@@ -53,3 +53,21 @@ func (cmd *Cmd) handleLPushCommand() string {
 	database.Store(key, ObjectList)
 	return util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value))
 }
+
+func (cmd *Cmd) handleLLenCommand() string {
+	if len(cmd.Args) < 2 {
+		return "-ERR wrong number of arguments for 'llen' command\r\n"
+	}
+
+	key := cmd.Args[1]
+
+	lock := database.GetKeyLock(key)
+	defer lock.Unlock()
+
+	lock.Lock()
+	ObjectList, ok := database.Get(key)
+	if !ok {
+		return util.ReturnIntegerResponse(0)
+	}
+	return util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value))
+}
