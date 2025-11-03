@@ -16,6 +16,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleSetCommand()
 	case "GET":
 		return cmnd.handleGetCommand()
+	case "RPUSH":
+		return cmnd.handleRPushCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}

@@ -13,3 +13,7 @@ func ReturnNullResponse() string {
 func ReturnOkResponse() string {
 	return "+OK\r\n"
 }
+
+func ReturnIntegerResponse(response int) string {
+	return ":" + strconv.Itoa(response) + "\r\n"
+}
