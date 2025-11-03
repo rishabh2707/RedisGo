@@ -18,6 +18,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleGetCommand()
 	case "RPUSH":
 		return cmnd.handleRPushCommand()
+	case "LPUSH":
+		return cmnd.handleLPushCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}

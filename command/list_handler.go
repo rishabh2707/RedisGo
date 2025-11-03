@@ -30,3 +30,26 @@ func (cmd *Cmd) handleRPushCommand() string {
 	database.Store(key, ObjectList)
 	return util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value))
 }
+
+func (cmd *Cmd) handleLPushCommand() string {
+	if len(cmd.Args) < 3 {
+		return "-ERR wrong number of arguments for 'lpush' command\r\n"
+	}
+
+	key := cmd.Args[1]
+	//value := cmd.Args[2]
+
+	lock := database.GetKeyLock(key)
+	defer lock.Unlock()
+
+	lock.Lock()
+	ObjectList, ok := database.Get(key)
+	if !ok {
+		ObjectList = &objectList{Value: []string{}}
+	}
+	for _, v := range cmd.Args[2:] {
+		ObjectList.(*objectList).Value = append([]string{v}, ObjectList.(*objectList).Value...)
+	}
+	database.Store(key, ObjectList)
+	return util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value))
+}
