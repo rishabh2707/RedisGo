@@ -13,6 +13,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleEchoCommand()
 	case "SET":
 		return cmnd.handleSetCommand()
+	case "GET":
+		return cmnd.handleGetCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}
