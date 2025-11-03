@@ -71,3 +71,24 @@ func (cmd *Cmd) handleLLenCommand() string {
 	}
 	return util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value))
 }
+
+func (cmd *Cmd) handleLPopCommand() string {
+	if len(cmd.Args) < 2 {
+		return "-ERR wrong number of arguments for 'lpop' command\r\n"
+	}
+
+	key := cmd.Args[1]
+
+	lock := database.GetKeyLock(key)
+	defer lock.Unlock()
+
+	lock.Lock()
+	ObjectList, ok := database.Get(key)
+	if !ok {
+		return util.ReturnNullResponse()
+	}
+	poppedValue := ObjectList.(*objectList).Value[0]
+	ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
+	database.Store(key, ObjectList)
+	return util.ParseNormalResponse(poppedValue)
+}
