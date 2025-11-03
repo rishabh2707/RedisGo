@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+
+	"com.github.redisgo/connection"
 )
 
 func main() {
@@ -18,11 +20,14 @@ func main() {
 
 	fmt.Println("Server started on port 6379")
 
-	conn, err := ln.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
-	}
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
 
-	conn.Write([]byte("+PONG\r\n"))
+		handler := connection.NewConnectionHandler(&conn)
+		go handler.Handle()
+	}
 }
