@@ -11,6 +11,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handlePingCommand()
 	case "ECHO":
 		return cmnd.handleEchoCommand()
+	case "SET":
+		return cmnd.handleSetCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}

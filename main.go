@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"com.github.redisgo/connection"
+	"com.github.redisgo/database"
 )
 
 func main() {
@@ -19,6 +20,8 @@ func main() {
 	}
 
 	fmt.Println("Server started on port 6379")
+
+	database.InitDataBase()
 
 	for {
 		conn, err := ln.Accept()
