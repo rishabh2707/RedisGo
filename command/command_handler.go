@@ -1,8 +1,9 @@
 package command
 
 import (
-	"strconv"
 	"strings"
+
+	"com.github.redisgo/util"
 )
 
 func (cmnd *Cmd) Handle() string {
@@ -25,5 +26,5 @@ func (cmnd *Cmd) handlePingCommand() string {
 }
 
 func (cmnd *Cmd) handleEchoCommand() string {
-	return "$" + strconv.Itoa(len(cmnd.Args[1])) + "\r\n" + cmnd.Args[1] + "\r\n"
+	return util.ParseNormalResponse(cmnd.Args[1])
 }
