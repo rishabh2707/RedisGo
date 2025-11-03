@@ -11,6 +11,10 @@ func (cmd *Cmd) handleSetCommand() string {
 		return "-ERR wrong number of arguments for 'set' command\r\n"
 	}
 
+	lock := database.GetKeyLock(cmd.Args[1])
+	lock.Lock()
+	defer lock.Unlock()
+
 	key := cmd.Args[1]
 	value := cmd.Args[2]
 
