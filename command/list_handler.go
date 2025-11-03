@@ -15,7 +15,7 @@ func (cmd *Cmd) handleRPushCommand() string {
 	}
 
 	key := cmd.Args[1]
-	value := cmd.Args[2]
+	//value := cmd.Args[2]
 
 	lock := database.GetKeyLock(key)
 	defer lock.Unlock()
@@ -23,9 +23,9 @@ func (cmd *Cmd) handleRPushCommand() string {
 	lock.Lock()
 	ObjectList, ok := database.Get(key)
 	if !ok {
-		ObjectList = &objectList{Value: []string{value}}
+		ObjectList = &objectList{Value: cmd.Args[2:]}
 	} else {
-		ObjectList.(*objectList).Value = append(ObjectList.(*objectList).Value, value)
+		ObjectList.(*objectList).Value = append(ObjectList.(*objectList).Value, cmd.Args[2:]...)
 	}
 	database.Store(key, ObjectList)
 	return util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value))
