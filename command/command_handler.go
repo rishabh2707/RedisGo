@@ -31,6 +31,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleBLPopCommand()
 	case "TYPE":
 		return cmnd.handleTypeCommand()
+	case "XADD":
+		return cmnd.handleXAddCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}
@@ -61,6 +63,8 @@ func (cmnd *Cmd) handleTypeCommand() string {
 		return util.ParseNormalResponse("string")
 	case *objectList:
 		return util.ParseNormalResponse("list")
+	case *streamList:
+		return util.ParseNormalResponse("stream")
 	default:
 		return util.ParseNormalResponse("none")
 	}
