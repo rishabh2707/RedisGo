@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"com.github.redisgo/database"
 	"com.github.redisgo/util"
@@ -43,7 +44,7 @@ func (cmnd *Cmd) handleXAddCommand() string {
 		StreamList.(*streamList).Value = append(StreamList.(*streamList).Value, StreamObject)
 		previousId = StreamList.(*streamList).Value[len(StreamList.(*streamList).Value)-1].Id
 	}
-	if strings.HasSuffix(id, "*") {
+	if strings.HasSuffix(id, "-*") {
 		firstPart := strings.Split(id, "-")[0]
 		value, ok := database.Get(getSequenceNumberKey(key, firstPart))
 		if !ok {
@@ -57,6 +58,23 @@ func (cmnd *Cmd) handleXAddCommand() string {
 			sequenceNumber++
 			id = firstPart + "-" + strconv.Itoa(sequenceNumber)
 			database.Store(getSequenceNumberKey(key, firstPart), &object{Value: strconv.Itoa(sequenceNumber)})
+		}
+	} else if strings.Compare(id, "*") == 0 {
+		now := time.Now()
+		firstPart := strconv.Itoa(int(now.UnixMilli()))
+		value, ok := database.Get(getSequenceNumberKey(key, firstPart))
+		if !ok || value.(*object).Time.Before(now) {
+			database.Store(getSequenceNumberKey(key, firstPart), &object{Value: "0", ExpireInMillies: 1, Time: now.Add(1 * time.Millisecond)})
+			id = firstPart + "-0"
+		} else {
+			sequenceNumber, err := strconv.Atoi(value.(*object).Value)
+			if err != nil {
+				return util.ReturnErrorResponse("The ID specified in XADD must be a string")
+			}
+			sequenceNumber++
+			id = firstPart + "-" + strconv.Itoa(sequenceNumber)
+			value.(*object).Value = strconv.Itoa(sequenceNumber)
+			database.Store(getSequenceNumberKey(key, firstPart), value)
 		}
 	}
 	StreamObject.Id = id
