@@ -31,3 +31,7 @@ func ReturnArrayResponse(response []string) string {
 	}
 	return result
 }
+
+func ReturnErrorResponse(response string) string {
+	return "-ERR " + response + "\r\n"
+}
