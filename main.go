@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 
 	"com.github.redisgo/config"
 	"com.github.redisgo/connection"
@@ -19,7 +20,7 @@ func main() {
 	replicaof := flag.String("replicaof", "", "The address of the master to replicate from")
 	flag.Parse()
 	config.InitServerConfig()
-	config.ServerConfig.ReplicaOf = *replicaof
+	config.ServerConfig.ReplicaOf = strings.Join(strings.Split(*replicaof, " "), ":")
 	config.ServerConfig.Role = "master"
 	if *replicaof != "" {
 		config.ServerConfig.Role = "slave"
@@ -39,6 +40,20 @@ func main() {
 	fmt.Println("Server started on port " + *port)
 
 	database.InitDataBase()
+
+	if config.ServerConfig.Role == "slave" {
+		masterConnection, err := net.Dial("tcp", config.ServerConfig.ReplicaOf)
+		if err != nil {
+			fmt.Println("Failed to connect to master: ", err.Error())
+			os.Exit(1)
+		}
+		err = util.Handshake(&masterConnection)
+		if err != nil {
+			fmt.Println("Failed to handshake with master: ", err.Error())
+			os.Exit(1)
+		}
+	}
+
 	//test 1
 	for {
 		conn, err := ln.Accept()
