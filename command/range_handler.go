@@ -11,6 +11,9 @@ func (cmd *Cmd) handleLRangeCommand() string {
 	if len(cmd.Args) < 4 {
 		return "-ERR wrong number of arguments for 'lrange' command\r\n"
 	}
+	if cmd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
 
 	key := cmd.Args[1]
 	start, err1 := strconv.Atoi(cmd.Args[2])

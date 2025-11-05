@@ -23,6 +23,9 @@ func (cmnd *Cmd) handleXAddCommand() string {
 	if len(cmnd.Args) < 5 {
 		return "-ERR wrong number of arguments for 'xadd' command\r\n"
 	}
+	if cmnd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
 
 	key := cmnd.Args[1]
 	id := cmnd.Args[2]

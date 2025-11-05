@@ -35,16 +35,26 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleXAddCommand()
 	case "INCR":
 		return cmnd.handleIncrCommand()
+	case "MULTI":
+		return cmnd.handleMultiExecCommand()
+	case "EXEC":
+		return cmnd.handleExecCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}
 }
 
 func (cmnd *Cmd) handlePingCommand() string {
+	if cmnd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
 	return "+PONG\r\n"
 }
 
 func (cmnd *Cmd) handleEchoCommand() string {
+	if cmnd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
 	return util.ParseNormalResponse(cmnd.Args[1])
 }
 
@@ -52,7 +62,9 @@ func (cmnd *Cmd) handleTypeCommand() string {
 	if len(cmnd.Args) < 2 {
 		return "-ERR wrong number of arguments for 'type' command\r\n"
 	}
-
+	if cmnd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
 	key := cmnd.Args[1]
 
 	value, ok := database.Get(key)
@@ -70,4 +82,18 @@ func (cmnd *Cmd) handleTypeCommand() string {
 	default:
 		return util.ParseNormalResponse("none")
 	}
+}
+
+func (cmnd *Cmd) checkMultiExists() bool {
+	multiLock := database.GetKeyLock("MULTI")
+	multiLock.Lock()
+	response, ok := database.Get("MULTI")
+	if ok {
+		queue := response.(*Queue)
+		queue.Commands = append(queue.Commands, cmnd)
+		multiLock.Unlock()
+		return true
+	}
+	multiLock.Unlock()
+	return false
 }

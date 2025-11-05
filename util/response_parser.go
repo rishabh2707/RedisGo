@@ -16,6 +16,10 @@ func ReturnOkResponse() string {
 	return "+OK\r\n"
 }
 
+func ReturnQueuedResponse() string {
+	return "+QUEUED\r\n"
+}
+
 func ReturnIntegerResponse(response int) string {
 	return ":" + strconv.Itoa(response) + "\r\n"
 }

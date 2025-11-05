@@ -19,6 +19,9 @@ func (cmd *Cmd) handleSetCommand() string {
 	if len(cmd.Args) < 3 {
 		return "-ERR wrong number of arguments for 'set' command\r\n"
 	}
+	if cmd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
 
 	lock := database.GetKeyLock(cmd.Args[1])
 	defer lock.Unlock()
@@ -56,6 +59,10 @@ func (cmd *Cmd) handleGetCommand() string {
 		return "-ERR wrong number of arguments for 'get' command\r\n"
 	}
 
+	if cmd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
+
 	lock := database.GetKeyLock(cmd.Args[1])
 	defer lock.Unlock()
 
@@ -78,6 +85,11 @@ func (cmd *Cmd) handleIncrCommand() string {
 	if len(cmd.Args) < 2 {
 		return "-ERR wrong number of arguments for 'incr' command\r\n"
 	}
+
+	if cmd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
+
 	key := cmd.Args[1]
 	lock := database.GetKeyLock(key)
 	defer lock.Unlock()

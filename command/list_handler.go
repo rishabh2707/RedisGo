@@ -16,7 +16,9 @@ func (cmd *Cmd) handleRPushCommand() string {
 	if len(cmd.Args) < 3 {
 		return "-ERR wrong number of arguments for 'rpush' command\r\n"
 	}
-
+	if cmd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
 	key := cmd.Args[1]
 	//value := cmd.Args[2]
 
@@ -37,6 +39,10 @@ func (cmd *Cmd) handleRPushCommand() string {
 func (cmd *Cmd) handleLPushCommand() string {
 	if len(cmd.Args) < 3 {
 		return "-ERR wrong number of arguments for 'lpush' command\r\n"
+	}
+
+	if cmd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
 	}
 
 	key := cmd.Args[1]
@@ -61,6 +67,9 @@ func (cmd *Cmd) handleLLenCommand() string {
 	if len(cmd.Args) < 2 {
 		return "-ERR wrong number of arguments for 'llen' command\r\n"
 	}
+	if cmd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
 
 	key := cmd.Args[1]
 
@@ -78,6 +87,9 @@ func (cmd *Cmd) handleLLenCommand() string {
 func (cmd *Cmd) handleLPopCommand() string {
 	if len(cmd.Args) < 2 {
 		return "-ERR wrong number of arguments for 'lpop' command\r\n"
+	}
+	if cmd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
 	}
 
 	key := cmd.Args[1]
@@ -100,7 +112,9 @@ func (cmd *Cmd) handleBLPopCommand() string {
 	if len(cmd.Args) < 3 {
 		return "-ERR wrong number of arguments for 'blpop' command\r\n"
 	}
-
+	if cmd.checkMultiExists() {
+		return util.ReturnQueuedResponse()
+	}
 	key := cmd.Args[1]
 	timeout, err := strconv.ParseFloat(cmd.Args[2], 64)
 	if err != nil {
