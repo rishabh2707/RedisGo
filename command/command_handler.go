@@ -39,6 +39,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleMultiExecCommand()
 	case "EXEC":
 		return cmnd.handleExecCommand()
+	case "DISCARD":
+		return cmnd.handleDiscardCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}
@@ -96,4 +98,15 @@ func (cmnd *Cmd) checkMultiExists() bool {
 	}
 	multiLock.Unlock()
 	return false
+}
+
+func (cmnd *Cmd) handleDiscardCommand() string {
+	if cmnd.checkMultiExists() {
+		multiLock := database.GetKeyLock("MULTI")
+		multiLock.Lock()
+		database.Delete("MULTI")
+		multiLock.Unlock()
+		return util.ReturnOkResponse()
+	}
+	return util.ReturnErrorResponse("DISCARD without MULTI")
 }
