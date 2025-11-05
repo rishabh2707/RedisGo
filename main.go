@@ -22,6 +22,7 @@ func main() {
 	config.InitServerConfig()
 	config.ServerConfig.ReplicaOf = strings.Join(strings.Split(*replicaof, " "), ":")
 	config.ServerConfig.Role = "master"
+	config.ServerConfig.Port = *port
 	if *replicaof != "" {
 		config.ServerConfig.Role = "slave"
 	}

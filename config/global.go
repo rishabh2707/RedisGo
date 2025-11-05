@@ -1,6 +1,7 @@
 package config
 
 type serverConfig struct {
+	Port               string
 	Role               string
 	ReplicaOf          string
 	Master_replid      string
@@ -11,6 +12,7 @@ var ServerConfig *serverConfig
 
 func InitServerConfig() {
 	ServerConfig = &serverConfig{
+		Port:               "6379",
 		Role:               "master",
 		ReplicaOf:          "",
 		Master_replid:      "",
