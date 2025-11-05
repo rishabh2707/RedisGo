@@ -1,6 +1,7 @@
 package command
 
 import (
+	"strconv"
 	"strings"
 
 	"com.github.redisgo/database"
@@ -87,9 +88,9 @@ func (cmnd *Cmd) handleTypeCommand() string {
 }
 
 func (cmnd *Cmd) checkMultiExists() bool {
-	multiLock := database.GetKeyLock("MULTI")
+	multiLock := database.GetKeyLock("MULTI-" + strconv.FormatUint(util.GetGoroutineID(), 10))
 	multiLock.Lock()
-	response, ok := database.Get("MULTI")
+	response, ok := database.Get("MULTI-" + strconv.FormatUint(util.GetGoroutineID(), 10))
 	if ok {
 		queue := response.(*Queue)
 		queue.Commands = append(queue.Commands, cmnd)
@@ -102,7 +103,7 @@ func (cmnd *Cmd) checkMultiExists() bool {
 
 func (cmnd *Cmd) handleDiscardCommand() string {
 	if cmnd.checkMultiExists() {
-		multiLock := database.GetKeyLock("MULTI")
+		multiLock := database.GetKeyLock("MULTI-" + strconv.FormatUint(util.GetGoroutineID(), 10))
 		multiLock.Lock()
 		database.Delete("MULTI")
 		multiLock.Unlock()
