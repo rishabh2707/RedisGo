@@ -28,7 +28,7 @@ func main() {
 	fmt.Println("Server started on port " + *port)
 
 	database.InitDataBase()
-	//test
+	//test 1
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
