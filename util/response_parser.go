@@ -45,5 +45,9 @@ func ReturnErrorResponse(response string) string {
 func ReturnReplicationInfoResponse() string {
 	result := "#replication\n"
 	result += "role:" + config.ServerConfig.Role + "\n"
+	if config.ServerConfig.Role == "master" {
+		result += "master_replid:" + config.ServerConfig.Master_replid + "\n"
+		result += "master_repl_offset:" + strconv.FormatInt(config.ServerConfig.Master_repl_offset, 10) + "\n"
+	}
 	return ReturnBulkStringResponse(result)
 }

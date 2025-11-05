@@ -9,6 +9,7 @@ import (
 	"com.github.redisgo/config"
 	"com.github.redisgo/connection"
 	"com.github.redisgo/database"
+	"com.github.redisgo/util"
 )
 
 func main() {
@@ -22,6 +23,9 @@ func main() {
 	config.ServerConfig.Role = "master"
 	if *replicaof != "" {
 		config.ServerConfig.Role = "slave"
+	}
+	if config.ServerConfig.Role == "master" {
+		config.ServerConfig.Master_replid = util.GenerateID(40)
 	}
 
 	fmt.Println("Starting a tcp server on port " + *port)
