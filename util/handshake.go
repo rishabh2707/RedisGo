@@ -45,5 +45,12 @@ func Handshake(connection *net.Conn) error {
 		os.Exit(1)
 	}
 	fmt.Println("Got the response from server: " + (*connection).RemoteAddr().String() + ", " + response)
+	(*connection).Write([]byte("*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n"))
+	response, err = bufio.NewReader(*connection).ReadString('\n')
+	if err != nil {
+		fmt.Println("Failed to read response from server: " + (*connection).RemoteAddr().String() + ", " + err.Error())
+		os.Exit(1)
+	}
+	fmt.Println("Got the response from server: " + (*connection).RemoteAddr().String() + ", " + response)
 	return nil
 }

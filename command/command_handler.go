@@ -46,6 +46,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleInfoCommand()
 	case "REPLCONF":
 		return cmnd.handleREPLCONFCommand()
+	case "PSYNC":
+		return cmnd.handlePsyncCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}
