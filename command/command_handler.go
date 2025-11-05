@@ -33,6 +33,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleTypeCommand()
 	case "XADD":
 		return cmnd.handleXAddCommand()
+	case "INCR":
+		return cmnd.handleIncrCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}

@@ -73,3 +73,33 @@ func (cmd *Cmd) handleGetCommand() string {
 	}
 	return util.ParseNormalResponse(Object.Value)
 }
+
+func (cmd *Cmd) handleIncrCommand() string {
+	if len(cmd.Args) < 2 {
+		return "-ERR wrong number of arguments for 'incr' command\r\n"
+	}
+	key := cmd.Args[1]
+	lock := database.GetKeyLock(key)
+	defer lock.Unlock()
+
+	lock.Lock()
+	response, ok := database.Get(key)
+	if !ok {
+		database.Store(key, &object{Value: "1", ExpireInMillies: 0, Time: time.Time{}})
+		return util.ReturnIntegerResponse(1)
+	}
+	value := response.(*object).Value
+	now := time.Now()
+	if response.(*object).ExpireInMillies > 0 && response.(*object).Time.Before(now) {
+		database.Store(key, &object{Value: "1", ExpireInMillies: 0, Time: now.Add(1 * time.Second)})
+		return util.ReturnIntegerResponse(1)
+	}
+
+	valueInt, err := strconv.Atoi(value)
+	if err != nil {
+		return "-ERR value is not an integer\r\n"
+	}
+	valueInt++
+	database.Store(key, &object{Value: strconv.Itoa(valueInt), ExpireInMillies: 0, Time: time.Time{}})
+	return util.ReturnIntegerResponse(valueInt)
+}
