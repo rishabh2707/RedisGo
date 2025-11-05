@@ -2,9 +2,11 @@ package util
 
 import (
 	"strconv"
+
+	"com.github.redisgo/config"
 )
 
-func ParseNormalResponse(response string) string {
+func ReturnBulkStringResponse(response string) string {
 	return "$" + strconv.Itoa(len(response)) + "\r\n" + response + "\r\n"
 }
 
@@ -38,4 +40,10 @@ func ReturnArrayResponse(response []string) string {
 
 func ReturnErrorResponse(response string) string {
 	return "-ERR " + response + "\r\n"
+}
+
+func ReturnReplicationInfoResponse() string {
+	result := "#replication\n"
+	result += "role:" + config.ServerConfig.Role + "\n"
+	return ReturnBulkStringResponse(result)
 }

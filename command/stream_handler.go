@@ -86,7 +86,7 @@ func (cmnd *Cmd) handleXAddCommand() string {
 		return util.ReturnErrorResponse(err.Error())
 	}
 	database.Store(key, StreamList)
-	return util.ParseNormalResponse(StreamObject.Id)
+	return util.ReturnBulkStringResponse(StreamObject.Id)
 }
 
 func validateStreamObjectId(previousId string, currentId string) (bool, error) {

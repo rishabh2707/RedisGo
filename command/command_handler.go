@@ -42,6 +42,8 @@ func (cmnd *Cmd) Handle() string {
 		return cmnd.handleExecCommand()
 	case "DISCARD":
 		return cmnd.handleDiscardCommand()
+	case "INFO":
+		return cmnd.handleInfoCommand()
 	default:
 		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
 	}
@@ -58,7 +60,7 @@ func (cmnd *Cmd) handleEchoCommand() string {
 	if cmnd.checkMultiExists() {
 		return util.ReturnQueuedResponse()
 	}
-	return util.ParseNormalResponse(cmnd.Args[1])
+	return util.ReturnBulkStringResponse(cmnd.Args[1])
 }
 
 func (cmnd *Cmd) handleTypeCommand() string {
@@ -72,18 +74,18 @@ func (cmnd *Cmd) handleTypeCommand() string {
 
 	value, ok := database.Get(key)
 	if !ok {
-		return util.ParseNormalResponse("none")
+		return util.ReturnBulkStringResponse("none")
 	}
 
 	switch value.(type) {
 	case *object:
-		return util.ParseNormalResponse("string")
+		return util.ReturnBulkStringResponse("string")
 	case *objectList:
-		return util.ParseNormalResponse("list")
+		return util.ReturnBulkStringResponse("list")
 	case *streamList:
-		return util.ParseNormalResponse("stream")
+		return util.ReturnBulkStringResponse("stream")
 	default:
-		return util.ParseNormalResponse("none")
+		return util.ReturnBulkStringResponse("none")
 	}
 }
 

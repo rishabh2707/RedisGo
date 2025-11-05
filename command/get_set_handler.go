@@ -78,7 +78,7 @@ func (cmd *Cmd) handleGetCommand() string {
 		database.Delete(key)
 		return util.ReturnNullResponse()
 	}
-	return util.ParseNormalResponse(Object.Value)
+	return util.ReturnBulkStringResponse(Object.Value)
 }
 
 func (cmd *Cmd) handleIncrCommand() string {

@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 
+	"com.github.redisgo/config"
 	"com.github.redisgo/connection"
 	"com.github.redisgo/database"
 )
@@ -14,8 +15,14 @@ func main() {
 	fmt.Println("Welcome to RedisGo")
 
 	port := flag.String("port", "6379", "The port to listen on")
-
+	replicaof := flag.String("replicaof", "", "The address of the master to replicate from")
 	flag.Parse()
+	config.InitServerConfig()
+	config.ServerConfig.ReplicaOf = *replicaof
+	config.ServerConfig.Role = "master"
+	if *replicaof != "" {
+		config.ServerConfig.Role = "slave"
+	}
 
 	fmt.Println("Starting a tcp server on port " + *port)
 

@@ -105,7 +105,7 @@ func (cmd *Cmd) handleLPopCommand() string {
 	poppedValue := ObjectList.(*objectList).Value[0]
 	ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
 	database.Store(key, ObjectList)
-	return util.ParseNormalResponse(poppedValue)
+	return util.ReturnBulkStringResponse(poppedValue)
 }
 
 func (cmd *Cmd) handleBLPopCommand() string {
@@ -134,7 +134,7 @@ func (cmd *Cmd) handleBLPopCommand() string {
 		poppedValue := ObjectList.(*objectList).Value[0]
 		ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
 		database.Store(key, ObjectList)
-		return util.ParseNormalResponse(poppedValue)
+		return util.ReturnBulkStringResponse(poppedValue)
 	}
 
 	for {
@@ -149,7 +149,7 @@ func (cmd *Cmd) handleBLPopCommand() string {
 			poppedValue := ObjectList.(*objectList).Value[0]
 			ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
 			database.Store(key, ObjectList)
-			return util.ParseNormalResponse(poppedValue)
+			return util.ReturnBulkStringResponse(poppedValue)
 		}
 		lock.Unlock()
 		time.Sleep(1 * time.Millisecond)
