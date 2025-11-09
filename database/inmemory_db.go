@@ -26,3 +26,7 @@ func GetKeyLock(key string) *sync.Mutex {
 	lock, _ := keylock.LoadOrStore(key, &sync.Mutex{})
 	return lock.(*sync.Mutex)
 }
+
+func GetDB() *sync.Map {
+	return db
+}

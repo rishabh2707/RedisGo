@@ -106,7 +106,6 @@ func (cmd *Cmd) handleIncrCommand(conn *net.Conn) {
 
 	key := cmd.Args[1]
 	lock := database.GetKeyLock(key)
-	defer lock.Unlock()
 
 	lock.Lock()
 	response, ok := database.Get(key)
