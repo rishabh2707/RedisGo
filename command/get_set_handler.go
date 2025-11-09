@@ -71,7 +71,6 @@ func (cmd *Cmd) handleGetCommand(conn *net.Conn) {
 	}
 
 	lock := database.GetKeyLock(cmd.Args[1])
-	defer lock.Unlock()
 
 	key := cmd.Args[1]
 	lock.Lock()

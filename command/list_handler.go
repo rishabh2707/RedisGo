@@ -26,7 +26,6 @@ func (cmd *Cmd) handleRPushCommand(conn *net.Conn) {
 	//value := cmd.Args[2]
 
 	lock := database.GetKeyLock(key)
-	defer lock.Unlock()
 
 	lock.Lock()
 	ObjectList, ok := database.Get(key)
@@ -36,6 +35,7 @@ func (cmd *Cmd) handleRPushCommand(conn *net.Conn) {
 		ObjectList.(*objectList).Value = append(ObjectList.(*objectList).Value, cmd.Args[2:]...)
 	}
 	database.Store(key, ObjectList)
+	lock.Unlock()
 	writeResponse(conn, util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value)))
 }
 
@@ -81,7 +81,6 @@ func (cmd *Cmd) handleLLenCommand(conn *net.Conn) {
 	key := cmd.Args[1]
 
 	lock := database.GetKeyLock(key)
-	defer lock.Unlock()
 
 	lock.Lock()
 	ObjectList, ok := database.Get(key)
@@ -107,7 +106,6 @@ func (cmd *Cmd) handleLPopCommand(conn *net.Conn) {
 	key := cmd.Args[1]
 
 	lock := database.GetKeyLock(key)
-	defer lock.Unlock()
 
 	lock.Lock()
 	ObjectList, ok := database.Get(key)
@@ -140,7 +138,6 @@ func (cmd *Cmd) handleBLPopCommand(conn *net.Conn) {
 	}
 	timeoutInMilliseconds := float64(timeout * 1000)
 	lock := database.GetKeyLock(key)
-	defer lock.Unlock()
 
 	if timeoutInMilliseconds != float64(0) {
 		time.Sleep(time.Duration(timeoutInMilliseconds) * time.Millisecond)

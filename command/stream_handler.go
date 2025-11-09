@@ -39,7 +39,6 @@ func (cmnd *Cmd) handleXAddCommand(conn *net.Conn) {
 	}
 
 	lock := database.GetKeyLock(key)
-	defer lock.Unlock()
 
 	lock.Lock()
 	StreamList, ok := database.Get(key)
