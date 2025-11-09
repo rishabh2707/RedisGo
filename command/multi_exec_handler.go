@@ -34,23 +34,18 @@ func (cmd *Cmd) handleExecCommand(conn *net.Conn) {
 	lock := database.GetKeyLock("MULTI-" + strconv.FormatUint(util.GetGoroutineID(), 10))
 
 	lock.Lock()
-	_, ok := database.Get("MULTI-" + strconv.FormatUint(util.GetGoroutineID(), 10))
+	response, ok := database.Get("MULTI-" + strconv.FormatUint(util.GetGoroutineID(), 10))
 	if !ok {
 		lock.Unlock()
 		writeResponse(conn, "-ERR EXEC without MULTI\r\n")
 		return
 	}
-	/*queue := response.(*Queue)
-	responses := make([]string, 0)
+	queue := response.(*Queue)
+	//responses := make([]string, 0)
 	database.Delete("MULTI-" + strconv.FormatUint(util.GetGoroutineID(), 10))
 	lock.Unlock()
+	writeResponse(conn, "*"+strconv.Itoa(len(queue.Commands))+"\r\n")
 	for _, queuedCmd := range queue.Commands {
-		response := queuedCmd.Handle()
-		responses = append(responses, response)
+		queuedCmd.Handle(conn)
 	}
-	result := "*" + strconv.Itoa(len(responses)) + "\r\n"
-	for _, response := range responses {
-		result += response
-	}*/
-	writeResponse(conn, util.ReturnEmptyArrayResponse())
 }
