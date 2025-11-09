@@ -1,6 +1,7 @@
 package command
 
 import (
+	"net"
 	"strconv"
 	"strings"
 
@@ -8,88 +9,97 @@ import (
 	"com.github.redisgo/util"
 )
 
-func (cmnd *Cmd) Handle() string {
+func (cmnd *Cmd) Handle(conn *net.Conn) {
 	switch strings.ToUpper(cmnd.Name) {
 	case "PING":
-		return cmnd.handlePingCommand()
+		cmnd.handlePingCommand(conn)
 	case "ECHO":
-		return cmnd.handleEchoCommand()
+		cmnd.handleEchoCommand(conn)
 	case "SET":
-		return cmnd.handleSetCommand()
+		cmnd.handleSetCommand(conn)
 	case "GET":
-		return cmnd.handleGetCommand()
+		cmnd.handleGetCommand(conn)
 	case "RPUSH":
-		return cmnd.handleRPushCommand()
+		cmnd.handleRPushCommand(conn)
 	case "LPUSH":
-		return cmnd.handleLPushCommand()
+		cmnd.handleLPushCommand(conn)
 	case "LRANGE":
-		return cmnd.handleLRangeCommand()
+		cmnd.handleLRangeCommand(conn)
 	case "LLEN":
-		return cmnd.handleLLenCommand()
+		cmnd.handleLLenCommand(conn)
 	case "LPOP":
-		return cmnd.handleLPopCommand()
+		cmnd.handleLPopCommand(conn)
 	case "BLPOP":
-		return cmnd.handleBLPopCommand()
+		cmnd.handleBLPopCommand(conn)
 	case "TYPE":
-		return cmnd.handleTypeCommand()
+		cmnd.handleTypeCommand(conn)
 	case "XADD":
-		return cmnd.handleXAddCommand()
+		cmnd.handleXAddCommand(conn)
 	case "INCR":
-		return cmnd.handleIncrCommand()
+		cmnd.handleIncrCommand(conn)
 	case "MULTI":
-		return cmnd.handleMultiExecCommand()
+		cmnd.handleMultiExecCommand(conn)
 	case "EXEC":
-		return cmnd.handleExecCommand()
+		cmnd.handleExecCommand(conn)
 	case "DISCARD":
-		return cmnd.handleDiscardCommand()
+		cmnd.handleDiscardCommand(conn)
 	case "INFO":
-		return cmnd.handleInfoCommand()
+		cmnd.handleInfoCommand(conn)
 	case "REPLCONF":
-		return cmnd.handleREPLCONFCommand()
+		cmnd.handleREPLCONFCommand(conn)
 	case "PSYNC":
-		return cmnd.handlePsyncCommand()
+		cmnd.handlePsyncCommand(conn)
 	default:
-		return "-ERR unknown command '" + cmnd.Name + "'\r\n"
+		writeResponse(conn, "-ERR unknown command '"+cmnd.Name+"'\r\n")
 	}
 }
 
-func (cmnd *Cmd) handlePingCommand() string {
+func (cmnd *Cmd) handlePingCommand(conn *net.Conn) {
 	if cmnd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
-	return "+PONG\r\n"
+	writeResponse(conn, "+PONG\r\n")
 }
 
-func (cmnd *Cmd) handleEchoCommand() string {
+func (cmnd *Cmd) handleEchoCommand(conn *net.Conn) {
 	if cmnd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
-	return util.ReturnBulkStringResponse(cmnd.Args[1])
-}
-
-func (cmnd *Cmd) handleTypeCommand() string {
 	if len(cmnd.Args) < 2 {
-		return "-ERR wrong number of arguments for 'type' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'echo' command\r\n")
+		return
+	}
+	writeResponse(conn, util.ReturnBulkStringResponse(cmnd.Args[1]))
+}
+
+func (cmnd *Cmd) handleTypeCommand(conn *net.Conn) {
+	if len(cmnd.Args) < 2 {
+		writeResponse(conn, "-ERR wrong number of arguments for 'type' command\r\n")
+		return
 	}
 	if cmnd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
 	key := cmnd.Args[1]
 
 	value, ok := database.Get(key)
 	if !ok {
-		return util.ReturnBulkStringResponse("none")
+		writeResponse(conn, util.ReturnBulkStringResponse("none"))
+		return
 	}
 
 	switch value.(type) {
 	case *object:
-		return util.ReturnBulkStringResponse("string")
+		writeResponse(conn, util.ReturnBulkStringResponse("string"))
 	case *objectList:
-		return util.ReturnBulkStringResponse("list")
+		writeResponse(conn, util.ReturnBulkStringResponse("list"))
 	case *streamList:
-		return util.ReturnBulkStringResponse("stream")
+		writeResponse(conn, util.ReturnBulkStringResponse("stream"))
 	default:
-		return util.ReturnBulkStringResponse("none")
+		writeResponse(conn, util.ReturnBulkStringResponse("none"))
 	}
 }
 
@@ -107,13 +117,18 @@ func (cmnd *Cmd) checkMultiExists() bool {
 	return false
 }
 
-func (cmnd *Cmd) handleDiscardCommand() string {
+func (cmnd *Cmd) handleDiscardCommand(conn *net.Conn) {
 	if cmnd.checkMultiExists() {
 		multiLock := database.GetKeyLock("MULTI-" + strconv.FormatUint(util.GetGoroutineID(), 10))
 		multiLock.Lock()
-		database.Delete("MULTI")
+		database.Delete("MULTI-" + strconv.FormatUint(util.GetGoroutineID(), 10))
 		multiLock.Unlock()
-		return util.ReturnOkResponse()
+		writeResponse(conn, util.ReturnOkResponse())
+		return
 	}
-	return util.ReturnErrorResponse("DISCARD without MULTI")
+	writeResponse(conn, util.ReturnErrorResponse("DISCARD without MULTI"))
+}
+
+func writeResponse(conn *net.Conn, response string) {
+	(*conn).Write([]byte(response))
 }

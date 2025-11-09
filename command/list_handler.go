@@ -1,6 +1,7 @@
 package command
 
 import (
+	"net"
 	"strconv"
 	"time"
 
@@ -12,12 +13,14 @@ type objectList struct {
 	Value []string
 }
 
-func (cmd *Cmd) handleRPushCommand() string {
+func (cmd *Cmd) handleRPushCommand(conn *net.Conn) {
 	if len(cmd.Args) < 3 {
-		return "-ERR wrong number of arguments for 'rpush' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'rpush' command\r\n")
+		return
 	}
 	if cmd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
 	key := cmd.Args[1]
 	//value := cmd.Args[2]
@@ -33,16 +36,18 @@ func (cmd *Cmd) handleRPushCommand() string {
 		ObjectList.(*objectList).Value = append(ObjectList.(*objectList).Value, cmd.Args[2:]...)
 	}
 	database.Store(key, ObjectList)
-	return util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value))
+	writeResponse(conn, util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value)))
 }
 
-func (cmd *Cmd) handleLPushCommand() string {
+func (cmd *Cmd) handleLPushCommand(conn *net.Conn) {
 	if len(cmd.Args) < 3 {
-		return "-ERR wrong number of arguments for 'lpush' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'lpush' command\r\n")
+		return
 	}
 
 	if cmd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
 
 	key := cmd.Args[1]
@@ -60,15 +65,17 @@ func (cmd *Cmd) handleLPushCommand() string {
 		ObjectList.(*objectList).Value = append([]string{v}, ObjectList.(*objectList).Value...)
 	}
 	database.Store(key, ObjectList)
-	return util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value))
+	writeResponse(conn, util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value)))
 }
 
-func (cmd *Cmd) handleLLenCommand() string {
+func (cmd *Cmd) handleLLenCommand(conn *net.Conn) {
 	if len(cmd.Args) < 2 {
-		return "-ERR wrong number of arguments for 'llen' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'llen' command\r\n")
+		return
 	}
 	if cmd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
 
 	key := cmd.Args[1]
@@ -79,17 +86,22 @@ func (cmd *Cmd) handleLLenCommand() string {
 	lock.Lock()
 	ObjectList, ok := database.Get(key)
 	if !ok {
-		return util.ReturnIntegerResponse(0)
+		lock.Unlock()
+		writeResponse(conn, util.ReturnIntegerResponse(0))
+		return
 	}
-	return util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value))
+	lock.Unlock()
+	writeResponse(conn, util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value)))
 }
 
-func (cmd *Cmd) handleLPopCommand() string {
+func (cmd *Cmd) handleLPopCommand(conn *net.Conn) {
 	if len(cmd.Args) < 2 {
-		return "-ERR wrong number of arguments for 'lpop' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'lpop' command\r\n")
+		return
 	}
 	if cmd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
 
 	key := cmd.Args[1]
@@ -99,26 +111,32 @@ func (cmd *Cmd) handleLPopCommand() string {
 
 	lock.Lock()
 	ObjectList, ok := database.Get(key)
-	if !ok {
-		return util.ReturnNullResponse()
+	if !ok || len(ObjectList.(*objectList).Value) == 0 {
+		lock.Unlock()
+		writeResponse(conn, util.ReturnNullResponse())
+		return
 	}
 	poppedValue := ObjectList.(*objectList).Value[0]
 	ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
 	database.Store(key, ObjectList)
-	return util.ReturnBulkStringResponse(poppedValue)
+	lock.Unlock()
+	writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
 }
 
-func (cmd *Cmd) handleBLPopCommand() string {
+func (cmd *Cmd) handleBLPopCommand(conn *net.Conn) {
 	if len(cmd.Args) < 3 {
-		return "-ERR wrong number of arguments for 'blpop' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'blpop' command\r\n")
+		return
 	}
 	if cmd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
 	key := cmd.Args[1]
 	timeout, err := strconv.ParseFloat(cmd.Args[2], 64)
 	if err != nil {
-		return "-ERR invalid timeout\r\n"
+		writeResponse(conn, "-ERR invalid timeout\r\n")
+		return
 	}
 	timeoutInMilliseconds := float64(timeout * 1000)
 	lock := database.GetKeyLock(key)
@@ -128,13 +146,17 @@ func (cmd *Cmd) handleBLPopCommand() string {
 		time.Sleep(time.Duration(timeoutInMilliseconds) * time.Millisecond)
 		lock.Lock()
 		ObjectList, ok := database.Get(key)
-		if !ok {
-			return util.ReturnNullResponse()
+		if !ok || len(ObjectList.(*objectList).Value) == 0 {
+			lock.Unlock()
+			writeResponse(conn, util.ReturnNullResponse())
+			return
 		}
 		poppedValue := ObjectList.(*objectList).Value[0]
 		ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
 		database.Store(key, ObjectList)
-		return util.ReturnBulkStringResponse(poppedValue)
+		lock.Unlock()
+		writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
+		return
 	}
 
 	for {
@@ -149,7 +171,9 @@ func (cmd *Cmd) handleBLPopCommand() string {
 			poppedValue := ObjectList.(*objectList).Value[0]
 			ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
 			database.Store(key, ObjectList)
-			return util.ReturnBulkStringResponse(poppedValue)
+			lock.Unlock()
+			writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
+			return
 		}
 		lock.Unlock()
 		time.Sleep(1 * time.Millisecond)

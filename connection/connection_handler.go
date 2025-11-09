@@ -28,11 +28,11 @@ func (h *ConnectionHandler) Handle() {
 		select {
 		case cmd := <-h.in:
 			fmt.Printf("[DEBUG] Received command: %s\r\n", cmd)
-			response := cmd.Handle()
-			(*h.conn).Write([]byte(response))
-			if cmd.Name == "PSYNC" && len(cmd.Args) >= 3 && cmd.Args[2] == "-1" {
+			cmd.Handle(h.conn)
+			//(*h.conn).Write([]byte(response))
+			/*if cmd.Name == "PSYNC" && len(cmd.Args) >= 3 && cmd.Args[2] == "-1" {
 				h.sendEmptyRDBfileResponse()
-			}
+			}*/
 		}
 	}
 }

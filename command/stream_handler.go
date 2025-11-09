@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -19,12 +20,14 @@ type streamList struct {
 	Value []*streamObject
 }
 
-func (cmnd *Cmd) handleXAddCommand() string {
+func (cmnd *Cmd) handleXAddCommand(conn *net.Conn) {
 	if len(cmnd.Args) < 5 {
-		return "-ERR wrong number of arguments for 'xadd' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'xadd' command\r\n")
+		return
 	}
 	if cmnd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
 
 	key := cmnd.Args[1]
@@ -56,7 +59,9 @@ func (cmnd *Cmd) handleXAddCommand() string {
 		} else {
 			sequenceNumber, err := strconv.Atoi(value.(*object).Value)
 			if err != nil {
-				return util.ReturnErrorResponse("The ID specified in XADD must be a string")
+				lock.Unlock()
+				writeResponse(conn, util.ReturnErrorResponse("The ID specified in XADD must be a string"))
+				return
 			}
 			sequenceNumber++
 			id = firstPart + "-" + strconv.Itoa(sequenceNumber)
@@ -72,7 +77,9 @@ func (cmnd *Cmd) handleXAddCommand() string {
 		} else {
 			sequenceNumber, err := strconv.Atoi(value.(*object).Value)
 			if err != nil {
-				return util.ReturnErrorResponse("The ID specified in XADD must be a string")
+				lock.Unlock()
+				writeResponse(conn, util.ReturnErrorResponse("The ID specified in XADD must be a string"))
+				return
 			}
 			sequenceNumber++
 			id = firstPart + "-" + strconv.Itoa(sequenceNumber)
@@ -83,10 +90,13 @@ func (cmnd *Cmd) handleXAddCommand() string {
 	StreamObject.Id = id
 	ok, err := validateStreamObjectId(previousId, StreamObject.Id)
 	if !ok {
-		return util.ReturnErrorResponse(err.Error())
+		lock.Unlock()
+		writeResponse(conn, util.ReturnErrorResponse(err.Error()))
+		return
 	}
 	database.Store(key, StreamList)
-	return util.ReturnBulkStringResponse(StreamObject.Id)
+	lock.Unlock()
+	writeResponse(conn, util.ReturnBulkStringResponse(StreamObject.Id))
 }
 
 func validateStreamObjectId(previousId string, currentId string) (bool, error) {

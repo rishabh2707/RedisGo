@@ -1,6 +1,7 @@
 package command
 
 import (
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -15,12 +16,14 @@ type object struct {
 	Time            time.Time
 }
 
-func (cmd *Cmd) handleSetCommand() string {
+func (cmd *Cmd) handleSetCommand(conn *net.Conn) {
 	if len(cmd.Args) < 3 {
-		return "-ERR wrong number of arguments for 'set' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'set' command\r\n")
+		return
 	}
 	if cmd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
 
 	lock := database.GetKeyLock(cmd.Args[1])
@@ -35,7 +38,8 @@ func (cmd *Cmd) handleSetCommand() string {
 		timeUnit := strings.ToUpper(cmd.Args[3])
 		timeValue, err := strconv.Atoi(cmd.Args[4])
 		if err != nil {
-			return "-ERR invalid expire time\r\n"
+			writeResponse(conn, "-ERR invalid expire time\r\n")
+			return
 		}
 
 		switch timeUnit {
@@ -44,23 +48,26 @@ func (cmd *Cmd) handleSetCommand() string {
 		case "EX":
 			Object.ExpireInMillies = int64(timeValue) * 1000
 		default:
-			return "-ERR unknown time unit\r\n"
+			writeResponse(conn, "-ERR unknown time unit\r\n")
+			return
 		}
 
 		Object.Time = time.Now().Add(time.Duration(Object.ExpireInMillies) * time.Millisecond)
 	}
 	lock.Lock()
 	database.Store(key, Object)
-	return util.ReturnOkResponse()
+	writeResponse(conn, util.ReturnOkResponse())
 }
 
-func (cmd *Cmd) handleGetCommand() string {
+func (cmd *Cmd) handleGetCommand(conn *net.Conn) {
 	if len(cmd.Args) < 2 {
-		return "-ERR wrong number of arguments for 'get' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'get' command\r\n")
+		return
 	}
 
 	if cmd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
 
 	lock := database.GetKeyLock(cmd.Args[1])
@@ -70,24 +77,31 @@ func (cmd *Cmd) handleGetCommand() string {
 	lock.Lock()
 	value, ok := database.Get(key)
 	if !ok {
-		return util.ReturnNullResponse()
+		lock.Unlock()
+		writeResponse(conn, util.ReturnNullResponse())
+		return
 	}
 	now := time.Now()
 	Object := value.(*object)
 	if Object.ExpireInMillies > 0 && now.After(Object.Time) {
 		database.Delete(key)
-		return util.ReturnNullResponse()
+		lock.Unlock()
+		writeResponse(conn, util.ReturnNullResponse())
+		return
 	}
-	return util.ReturnBulkStringResponse(Object.Value)
+	lock.Unlock()
+	writeResponse(conn, util.ReturnBulkStringResponse(Object.Value))
 }
 
-func (cmd *Cmd) handleIncrCommand() string {
+func (cmd *Cmd) handleIncrCommand(conn *net.Conn) {
 	if len(cmd.Args) < 2 {
-		return "-ERR wrong number of arguments for 'incr' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'incr' command\r\n")
+		return
 	}
 
 	if cmd.checkMultiExists() {
-		return util.ReturnQueuedResponse()
+		writeResponse(conn, util.ReturnQueuedResponse())
+		return
 	}
 
 	key := cmd.Args[1]
@@ -98,20 +112,27 @@ func (cmd *Cmd) handleIncrCommand() string {
 	response, ok := database.Get(key)
 	if !ok {
 		database.Store(key, &object{Value: "1", ExpireInMillies: 0, Time: time.Time{}})
-		return util.ReturnIntegerResponse(1)
+		lock.Unlock()
+		writeResponse(conn, util.ReturnIntegerResponse(1))
+		return
 	}
 	value := response.(*object).Value
 	now := time.Now()
 	if response.(*object).ExpireInMillies > 0 && response.(*object).Time.Before(now) {
 		database.Store(key, &object{Value: "1", ExpireInMillies: 0, Time: now.Add(1 * time.Second)})
-		return util.ReturnIntegerResponse(1)
+		lock.Unlock()
+		writeResponse(conn, util.ReturnIntegerResponse(1))
+		return
 	}
 
 	valueInt, err := strconv.Atoi(value)
 	if err != nil {
-		return "-ERR value is not an integer\r\n"
+		lock.Unlock()
+		writeResponse(conn, "-ERR value is not an integer\r\n")
+		return
 	}
 	valueInt++
 	database.Store(key, &object{Value: strconv.Itoa(valueInt), ExpireInMillies: 0, Time: time.Time{}})
-	return util.ReturnIntegerResponse(valueInt)
+	lock.Unlock()
+	writeResponse(conn, util.ReturnIntegerResponse(valueInt))
 }

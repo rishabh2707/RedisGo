@@ -1,19 +1,23 @@
 package command
 
-import "com.github.redisgo/util"
+import (
+	"net"
 
-func (cmd *Cmd) handleInfoCommand() string {
+	"com.github.redisgo/util"
+)
+
+func (cmd *Cmd) handleInfoCommand(conn *net.Conn) {
 	if len(cmd.Args) < 2 {
-		return "-ERR wrong number of arguments for 'info' command\r\n"
+		writeResponse(conn, "-ERR wrong number of arguments for 'info' command\r\n")
+		return
 	}
 
 	key := cmd.Args[1]
 
 	switch key {
 	case "replication":
-		return util.ReturnReplicationInfoResponse()
+		writeResponse(conn, util.ReturnReplicationInfoResponse())
 	default:
-		return util.ReturnErrorResponse("unknown key: " + key)
+		writeResponse(conn, util.ReturnErrorResponse("unknown key: "+key))
 	}
-
 }
