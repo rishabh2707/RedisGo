@@ -30,6 +30,10 @@ func main() {
 		config.ServerConfig.Master_replid = util.GenerateID(40)
 	}
 
+	if config.ServerConfig.Role == "master" {
+		config.InitRDBConfig()
+	}
+
 	fmt.Println("Starting a tcp server on port " + *port)
 
 	ln, err := net.Listen("tcp", "0.0.0.0:"+*port)

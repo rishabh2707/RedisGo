@@ -49,6 +49,8 @@ func (cmnd *Cmd) Handle(conn *net.Conn) {
 		cmnd.handleREPLCONFCommand(conn)
 	case "PSYNC":
 		cmnd.handlePsyncCommand(conn)
+	case "CONFIG":
+		cmnd.handleGetConfigCommand(conn)
 	default:
 		writeResponse(conn, "-ERR unknown command '"+cmnd.Name+"'\r\n")
 	}

@@ -19,3 +19,17 @@ func InitServerConfig() {
 		Master_repl_offset: 0,
 	}
 }
+
+type rdbConfig struct {
+	Dir        string
+	DbFileName string
+}
+
+var RDBConfig *rdbConfig
+
+func InitRDBConfig() {
+	RDBConfig = &rdbConfig{
+		Dir:        "/tmp/redis-files",
+		DbFileName: "dump.rdb",
+	}
+}
