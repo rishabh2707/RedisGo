@@ -43,16 +43,18 @@ func main() {
 	database.InitDataBase()
 
 	if config.ServerConfig.Role == "slave" {
-		masterConnection, err := net.Dial("tcp", config.ServerConfig.ReplicaOf)
-		if err != nil {
-			fmt.Println("Failed to connect to master: ", err.Error())
-			os.Exit(1)
-		}
-		err = util.Handshake(&masterConnection)
-		if err != nil {
-			fmt.Println("Failed to handshake with master: ", err.Error())
-			os.Exit(1)
-		}
+		go func() {
+			masterConnection, err := net.Dial("tcp", config.ServerConfig.ReplicaOf)
+			if err != nil {
+				fmt.Println("Failed to connect to master: ", err.Error())
+				os.Exit(1)
+			}
+			err = util.Handshake(&masterConnection)
+			if err != nil {
+				fmt.Println("Failed to handshake with master: ", err.Error())
+				os.Exit(1)
+			}
+		}()
 	}
 
 	//test 1
