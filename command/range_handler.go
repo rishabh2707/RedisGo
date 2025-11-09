@@ -27,7 +27,6 @@ func (cmd *Cmd) handleLRangeCommand(conn *net.Conn) {
 	}
 
 	lock := database.GetKeyLock(key)
-	//defer lock.Unlock()
 
 	lock.Lock()
 	ObjectList, ok := database.Get(key)
