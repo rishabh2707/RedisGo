@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"com.github.redisgo/config"
 	"com.github.redisgo/database"
 	"com.github.redisgo/util"
 )
@@ -56,7 +57,10 @@ func (cmd *Cmd) handleSetCommand(conn *net.Conn) {
 	}
 	lock.Lock()
 	database.Store(key, Object)
-	writeResponse(conn, util.ReturnOkResponse())
+	if config.ServerConfig.Role == "master" {
+		writeResponse(conn, util.ReturnOkResponse())
+		go cmd.propagateToSlaves()
+	}
 }
 
 func (cmd *Cmd) handleGetCommand(conn *net.Conn) {
@@ -111,7 +115,10 @@ func (cmd *Cmd) handleIncrCommand(conn *net.Conn) {
 	if !ok {
 		database.Store(key, &object{Value: "1", ExpireInMillies: 0, Time: time.Time{}})
 		lock.Unlock()
-		writeResponse(conn, util.ReturnIntegerResponse(1))
+		if config.ServerConfig.Role == "master" {
+			writeResponse(conn, util.ReturnIntegerResponse(1))
+			go cmd.propagateToSlaves()
+		}
 		return
 	}
 	value := response.(*object).Value
@@ -119,8 +126,11 @@ func (cmd *Cmd) handleIncrCommand(conn *net.Conn) {
 	if response.(*object).ExpireInMillies > 0 && response.(*object).Time.Before(now) {
 		database.Store(key, &object{Value: "1", ExpireInMillies: 0, Time: now.Add(1 * time.Second)})
 		lock.Unlock()
-		writeResponse(conn, util.ReturnIntegerResponse(1))
-		return
+		if config.ServerConfig.Role == "master" {
+			writeResponse(conn, util.ReturnIntegerResponse(1))
+			go cmd.propagateToSlaves()
+			return
+		}
 	}
 
 	valueInt, err := strconv.Atoi(value)
@@ -132,5 +142,8 @@ func (cmd *Cmd) handleIncrCommand(conn *net.Conn) {
 	valueInt++
 	database.Store(key, &object{Value: strconv.Itoa(valueInt), ExpireInMillies: 0, Time: time.Time{}})
 	lock.Unlock()
-	writeResponse(conn, util.ReturnIntegerResponse(valueInt))
+	if config.ServerConfig.Role == "master" {
+		writeResponse(conn, util.ReturnIntegerResponse(valueInt))
+		go cmd.propagateToSlaves()
+	}
 }

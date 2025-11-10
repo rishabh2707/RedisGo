@@ -11,10 +11,12 @@ import (
 func ReadCommand(reader *bufio.Reader) (*Cmd, error) {
 	line, err := reader.ReadBytes('\n')
 	if err != nil {
+		fmt.Println("Debug1: ", err.Error())
 		return nil, err
 	}
 
 	if len(line) < 3 || line[len(line)-2] != '\r' {
+		fmt.Println("Debug2: ", line)
 		return nil, fmt.Errorf("invalid command")
 	}
 
@@ -27,20 +29,23 @@ func ReadCommand(reader *bufio.Reader) (*Cmd, error) {
 	case '*':
 		return parseMultipleCommand(reader, line)
 	default:
+		fmt.Println("Debug3: ", line)
 		return nil, fmt.Errorf("invalid command")
 	}
 }
 
 func parseInlineCommand(content string) (*Cmd, error) {
+	fmt.Println("Debug4: ", content)
 	return &Cmd{
 		Name: content,
 	}, nil
 }
 
 func parseMultipleCommand(reader *bufio.Reader, line []byte) (*Cmd, error) {
-
+	fmt.Println("Debug5: ", line)
 	count, err := strconv.Atoi(string(bytes.TrimPrefix(line, []byte{'*'})))
 	if err != nil {
+		fmt.Println("Debug6: ", err.Error())
 		return nil, err
 	}
 
@@ -54,6 +59,7 @@ func parseMultipleCommand(reader *bufio.Reader, line []byte) (*Cmd, error) {
 		}
 
 		if len(line) < 2 {
+			fmt.Println("Debug7: ", line)
 			return nil, fmt.Errorf("invalid command")
 		}
 
@@ -73,4 +79,12 @@ func parseMultipleCommand(reader *bufio.Reader, line []byte) (*Cmd, error) {
 	cmd.Name = cmd.Args[0]
 
 	return cmd, nil
+}
+
+func (cmd *Cmd) ToRespFormat() string {
+	result := "*" + strconv.Itoa(len(cmd.Args)) + "\r\n"
+	for _, arg := range cmd.Args {
+		result += "$" + strconv.Itoa(len(arg)) + "\r\n" + arg + "\r\n"
+	}
+	return result
 }

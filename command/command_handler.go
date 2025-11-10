@@ -1,11 +1,14 @@
 package command
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
 
+	"com.github.redisgo/config"
 	"com.github.redisgo/database"
+	"com.github.redisgo/replication"
 	"com.github.redisgo/util"
 )
 
@@ -133,4 +136,14 @@ func (cmnd *Cmd) handleDiscardCommand(conn *net.Conn) {
 
 func writeResponse(conn *net.Conn, response string) {
 	(*conn).Write([]byte(response))
+}
+
+func (cmnd *Cmd) propagateToSlaves() {
+	if config.ServerConfig.Role == "master" {
+		for _, slaveConn := range replication.GetSlaveConnections() {
+			request := cmnd.ToRespFormat()
+			fmt.Println("Propagating to slave: " + slaveConn.RemoteAddr().String() + ", " + request)
+			slaveConn.Write([]byte(request))
+		}
+	}
 }

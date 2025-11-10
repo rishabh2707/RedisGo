@@ -47,5 +47,6 @@ func (cmd *Cmd) handleExecCommand(conn *net.Conn) {
 	writeResponse(conn, "*"+strconv.Itoa(len(queue.Commands))+"\r\n")
 	for _, queuedCmd := range queue.Commands {
 		queuedCmd.Handle(conn)
+		go queuedCmd.propagateToSlaves()
 	}
 }

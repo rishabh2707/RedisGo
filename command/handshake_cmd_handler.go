@@ -4,6 +4,7 @@ import (
 	"net"
 
 	"com.github.redisgo/config"
+	"com.github.redisgo/replication"
 	"com.github.redisgo/util"
 )
 
@@ -33,6 +34,8 @@ func (cmd *Cmd) handlePsyncCommand(conn *net.Conn) {
 		master_repl_offset = "0"
 	}
 	writeResponse(conn, "+FULLRESYNC "+config.ServerConfig.Master_replid+" "+master_repl_offset+"\r\n")
+	replication.AddSlaveConnection(conn)
+	//connection.AddSlaveConnection(conn)
 	// Send empty RDB file after FULLRESYNC response
 	/*if cmd.Args[2] == "-1" {
 		fmt.Println("Sending RDB snapshot")

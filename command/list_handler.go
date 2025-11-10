@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"com.github.redisgo/config"
 	"com.github.redisgo/database"
 	"com.github.redisgo/util"
 )
@@ -36,7 +37,10 @@ func (cmd *Cmd) handleRPushCommand(conn *net.Conn) {
 	}
 	database.Store(key, ObjectList)
 	lock.Unlock()
-	writeResponse(conn, util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value)))
+	if config.ServerConfig.Role == "master" {
+		writeResponse(conn, util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value)))
+		go cmd.propagateToSlaves()
+	}
 }
 
 func (cmd *Cmd) handleLPushCommand(conn *net.Conn) {
@@ -65,7 +69,10 @@ func (cmd *Cmd) handleLPushCommand(conn *net.Conn) {
 		ObjectList.(*objectList).Value = append([]string{v}, ObjectList.(*objectList).Value...)
 	}
 	database.Store(key, ObjectList)
-	writeResponse(conn, util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value)))
+	if config.ServerConfig.Role == "master" {
+		writeResponse(conn, util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value)))
+		go cmd.propagateToSlaves()
+	}
 }
 
 func (cmd *Cmd) handleLLenCommand(conn *net.Conn) {
@@ -118,7 +125,10 @@ func (cmd *Cmd) handleLPopCommand(conn *net.Conn) {
 	ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
 	database.Store(key, ObjectList)
 	lock.Unlock()
-	writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
+	if config.ServerConfig.Role == "master" {
+		writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
+		go cmd.propagateToSlaves()
+	}
 }
 
 func (cmd *Cmd) handleBLPopCommand(conn *net.Conn) {
@@ -128,6 +138,7 @@ func (cmd *Cmd) handleBLPopCommand(conn *net.Conn) {
 	}
 	if cmd.checkMultiExists() {
 		writeResponse(conn, util.ReturnQueuedResponse())
+		go cmd.propagateToSlaves()
 		return
 	}
 	key := cmd.Args[1]
@@ -152,7 +163,10 @@ func (cmd *Cmd) handleBLPopCommand(conn *net.Conn) {
 		ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
 		database.Store(key, ObjectList)
 		lock.Unlock()
-		writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
+		if config.ServerConfig.Role == "master" {
+			writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
+			go cmd.propagateToSlaves()
+		}
 		return
 	}
 
@@ -169,7 +183,10 @@ func (cmd *Cmd) handleBLPopCommand(conn *net.Conn) {
 			ObjectList.(*objectList).Value = ObjectList.(*objectList).Value[1:]
 			database.Store(key, ObjectList)
 			lock.Unlock()
-			writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
+			if config.ServerConfig.Role == "master" {
+				writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
+				go cmd.propagateToSlaves()
+			}
 			return
 		}
 		lock.Unlock()

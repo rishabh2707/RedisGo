@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"com.github.redisgo/config"
 	"com.github.redisgo/database"
 	"com.github.redisgo/util"
 )
@@ -95,7 +96,10 @@ func (cmnd *Cmd) handleXAddCommand(conn *net.Conn) {
 	}
 	database.Store(key, StreamList)
 	lock.Unlock()
-	writeResponse(conn, util.ReturnBulkStringResponse(StreamObject.Id))
+	if config.ServerConfig.Role == "master" {
+		writeResponse(conn, util.ReturnBulkStringResponse(StreamObject.Id))
+		go cmnd.propagateToSlaves()
+	}
 }
 
 func validateStreamObjectId(previousId string, currentId string) (bool, error) {

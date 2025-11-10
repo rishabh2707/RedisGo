@@ -2,10 +2,8 @@ package connection
 
 import (
 	"bufio"
-	"encoding/base64"
 	"fmt"
 	"net"
-	"strconv"
 
 	"com.github.redisgo/command"
 )
@@ -29,10 +27,6 @@ func (h *ConnectionHandler) Handle() {
 		case cmd := <-h.in:
 			fmt.Printf("[DEBUG] Received command: %s\r\n", cmd)
 			cmd.Handle(h.conn)
-			//(*h.conn).Write([]byte(response))
-			/*if cmd.Name == "PSYNC" && len(cmd.Args) >= 3 && cmd.Args[2] == "-1" {
-				h.sendEmptyRDBfileResponse()
-			}*/
 		}
 	}
 }
@@ -50,7 +44,7 @@ func (h *ConnectionHandler) read() {
 	}
 }
 
-func (h *ConnectionHandler) sendEmptyRDBfileResponse() {
+/*func (h *ConnectionHandler) sendEmptyRDBfileResponse() {
 	// Base64 encoded empty RDB file (Redis version 6.0+)
 	// This is a minimal valid RDB file with no data
 	sampleBase64EmptyRDBfile := "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog=="
@@ -85,4 +79,4 @@ func (h *ConnectionHandler) sendEmptyRDBfileResponse() {
 	}
 
 	fmt.Printf("Sent empty RDB file (%d bytes) to slave\n", len(decodedRDBfile))
-}
+}*/

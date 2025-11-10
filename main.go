@@ -10,6 +10,7 @@ import (
 	"com.github.redisgo/config"
 	"com.github.redisgo/connection"
 	"com.github.redisgo/database"
+	"com.github.redisgo/replication"
 	"com.github.redisgo/util"
 )
 
@@ -28,6 +29,7 @@ func main() {
 	}
 	if config.ServerConfig.Role == "master" {
 		config.ServerConfig.Master_replid = util.GenerateID(40)
+		replication.InitSlaveConnections()
 	}
 
 	if config.ServerConfig.Role == "master" {
@@ -47,7 +49,7 @@ func main() {
 	database.InitDataBase()
 
 	if config.ServerConfig.Role == "slave" {
-		go func() {
+		func() {
 			masterConnection, err := net.Dial("tcp", config.ServerConfig.ReplicaOf)
 			if err != nil {
 				fmt.Println("Failed to connect to master: ", err.Error())
@@ -58,6 +60,8 @@ func main() {
 				fmt.Println("Failed to handshake with master: ", err.Error())
 				os.Exit(1)
 			}
+			connHandler := connection.NewConnectionHandler(&masterConnection)
+			go connHandler.Handle()
 		}()
 	}
 
