@@ -25,6 +25,9 @@ func (cmd *Cmd) handleREPLCONFCommand(conn *net.Conn) {
 	default:
 		writeResponse(conn, "-ERR unknown key: "+key+"\r\n")
 	}
+	if config.ServerConfig.Role == "slave" {
+		replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmd.ToRespFormat())))
+	}
 }
 
 // todo: make all the handshake commands internal. should not be exposed to the user or redis clients.
@@ -39,12 +42,6 @@ func (cmd *Cmd) handlePsyncCommand(conn *net.Conn) {
 	}
 	writeResponse(conn, "+FULLRESYNC "+config.ServerConfig.Master_replid+" "+master_repl_offset+"\r\n")
 	replication.AddSlaveConnection(conn)
-	//connection.AddSlaveConnection(conn)
-	// Send empty RDB file after FULLRESYNC response
-	/*if cmd.Args[2] == "-1" {
-		fmt.Println("Sending RDB snapshot")
-		sendRDBSnapshot(conn, database.GetDB())
-	}*/
 }
 
 /*func sendRDBSnapshot(conn *net.Conn, db *sync.Map) error {

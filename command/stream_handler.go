@@ -9,6 +9,7 @@ import (
 
 	"com.github.redisgo/config"
 	"com.github.redisgo/database"
+	"com.github.redisgo/replication"
 	"com.github.redisgo/util"
 )
 
@@ -99,6 +100,9 @@ func (cmnd *Cmd) handleXAddCommand(conn *net.Conn) {
 	if config.ServerConfig.Role == "master" {
 		writeResponse(conn, util.ReturnBulkStringResponse(StreamObject.Id))
 		go cmnd.propagateToSlaves()
+	}
+	if config.ServerConfig.Role == "slave" {
+		replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmnd.ToRespFormat())))
 	}
 }
 

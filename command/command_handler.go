@@ -65,6 +65,9 @@ func (cmnd *Cmd) handlePingCommand(conn *net.Conn) {
 		return
 	}
 	writeResponse(conn, "+PONG\r\n")
+	if config.ServerConfig.Role == "slave" {
+		replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmnd.ToRespFormat())))
+	}
 }
 
 func (cmnd *Cmd) handleEchoCommand(conn *net.Conn) {

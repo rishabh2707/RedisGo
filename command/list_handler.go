@@ -7,6 +7,7 @@ import (
 
 	"com.github.redisgo/config"
 	"com.github.redisgo/database"
+	"com.github.redisgo/replication"
 	"com.github.redisgo/util"
 )
 
@@ -41,6 +42,9 @@ func (cmd *Cmd) handleRPushCommand(conn *net.Conn) {
 		writeResponse(conn, util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value)))
 		go cmd.propagateToSlaves()
 	}
+	if config.ServerConfig.Role == "slave" {
+		replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmd.ToRespFormat())))
+	}
 }
 
 func (cmd *Cmd) handleLPushCommand(conn *net.Conn) {
@@ -72,6 +76,9 @@ func (cmd *Cmd) handleLPushCommand(conn *net.Conn) {
 	if config.ServerConfig.Role == "master" {
 		writeResponse(conn, util.ReturnIntegerResponse(len(ObjectList.(*objectList).Value)))
 		go cmd.propagateToSlaves()
+	}
+	if config.ServerConfig.Role == "slave" {
+		replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmd.ToRespFormat())))
 	}
 }
 
@@ -129,6 +136,9 @@ func (cmd *Cmd) handleLPopCommand(conn *net.Conn) {
 		writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
 		go cmd.propagateToSlaves()
 	}
+	if config.ServerConfig.Role == "slave" {
+		replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmd.ToRespFormat())))
+	}
 }
 
 func (cmd *Cmd) handleBLPopCommand(conn *net.Conn) {
@@ -167,6 +177,9 @@ func (cmd *Cmd) handleBLPopCommand(conn *net.Conn) {
 			writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
 			go cmd.propagateToSlaves()
 		}
+		if config.ServerConfig.Role == "slave" {
+			replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmd.ToRespFormat())))
+		}
 		return
 	}
 
@@ -186,6 +199,9 @@ func (cmd *Cmd) handleBLPopCommand(conn *net.Conn) {
 			if config.ServerConfig.Role == "master" {
 				writeResponse(conn, util.ReturnBulkStringResponse(poppedValue))
 				go cmd.propagateToSlaves()
+			}
+			if config.ServerConfig.Role == "slave" {
+				replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmd.ToRespFormat())))
 			}
 			return
 		}

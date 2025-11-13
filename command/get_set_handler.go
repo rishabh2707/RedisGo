@@ -8,6 +8,7 @@ import (
 
 	"com.github.redisgo/config"
 	"com.github.redisgo/database"
+	"com.github.redisgo/replication"
 	"com.github.redisgo/util"
 )
 
@@ -60,6 +61,9 @@ func (cmd *Cmd) handleSetCommand(conn *net.Conn) {
 	if config.ServerConfig.Role == "master" {
 		writeResponse(conn, util.ReturnOkResponse())
 		go cmd.propagateToSlaves()
+	}
+	if config.ServerConfig.Role == "slave" {
+		replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmd.ToRespFormat())))
 	}
 }
 
@@ -118,6 +122,9 @@ func (cmd *Cmd) handleIncrCommand(conn *net.Conn) {
 		if config.ServerConfig.Role == "master" {
 			writeResponse(conn, util.ReturnIntegerResponse(1))
 			go cmd.propagateToSlaves()
+			if config.ServerConfig.Role == "slave" {
+				replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmd.ToRespFormat())))
+			}
 		}
 		return
 	}
@@ -129,6 +136,9 @@ func (cmd *Cmd) handleIncrCommand(conn *net.Conn) {
 		if config.ServerConfig.Role == "master" {
 			writeResponse(conn, util.ReturnIntegerResponse(1))
 			go cmd.propagateToSlaves()
+			if config.ServerConfig.Role == "slave" {
+				replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmd.ToRespFormat())))
+			}
 			return
 		}
 	}
@@ -145,5 +155,8 @@ func (cmd *Cmd) handleIncrCommand(conn *net.Conn) {
 	if config.ServerConfig.Role == "master" {
 		writeResponse(conn, util.ReturnIntegerResponse(valueInt))
 		go cmd.propagateToSlaves()
+	}
+	if config.ServerConfig.Role == "slave" {
+		replication.SetReplicaOffset(replication.GetReplicaOffset() + int64(len(cmd.ToRespFormat())))
 	}
 }

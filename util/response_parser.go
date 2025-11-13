@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"com.github.redisgo/config"
+	"com.github.redisgo/replication"
 )
 
 func ReturnBulkStringResponse(response string) string {
@@ -53,6 +54,7 @@ func ReturnReplicationInfoResponse() string {
 }
 
 func ReturnReplconfGetAckResponse() string {
-	result := []string{"REPLCONF", "ACK", "0"}
+	result := []string{"REPLCONF", "ACK", strconv.FormatInt(replication.GetReplicaOffset(), 10)}
+	replication.SetReplicaOffset(replication.GetReplicaOffset())
 	return ReturnArrayResponse(result)
 }

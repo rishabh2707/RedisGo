@@ -62,6 +62,7 @@ func main() {
 			}
 			connHandler := connection.NewConnectionHandler(&masterConnection)
 			go connHandler.Handle()
+			replication.InitReplicaOffset()
 		}()
 	}
 

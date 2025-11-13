@@ -8,6 +8,24 @@ type SlaveConnections struct {
 	connections []net.Conn
 }
 
+type ReplicaOffset struct {
+	offset int64
+}
+
+var replicaOffset *ReplicaOffset
+
+func InitReplicaOffset() {
+	replicaOffset = &ReplicaOffset{offset: 0}
+}
+
+func SetReplicaOffset(offset int64) {
+	replicaOffset.offset = offset
+}
+
+func GetReplicaOffset() int64 {
+	return replicaOffset.offset
+}
+
 var slaveConnections *SlaveConnections
 
 func InitSlaveConnections() {
