@@ -51,3 +51,8 @@ func ReturnReplicationInfoResponse() string {
 	}
 	return ReturnBulkStringResponse(result)
 }
+
+func ReturnReplconfGetAckResponse() string {
+	result := []string{"REPLCONF", "ACK", "0"}
+	return ReturnArrayResponse(result)
+}

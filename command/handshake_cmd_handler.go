@@ -2,6 +2,7 @@ package command
 
 import (
 	"net"
+	"strings"
 
 	"com.github.redisgo/config"
 	"com.github.redisgo/replication"
@@ -13,17 +14,20 @@ func (cmd *Cmd) handleREPLCONFCommand(conn *net.Conn) {
 		writeResponse(conn, "-ERR wrong number of arguments for 'replconf' command\r\n")
 		return
 	}
-	key := cmd.Args[1]
+	key := strings.ToLower(cmd.Args[1])
 	switch key {
 	case "listening-port":
 		writeResponse(conn, util.ReturnOkResponse())
 	case "capa":
 		writeResponse(conn, util.ReturnOkResponse())
+	case "getack":
+		writeResponse(conn, util.ReturnReplconfGetAckResponse())
 	default:
-		writeResponse(conn, util.ReturnErrorResponse("unknown key: "+key))
+		writeResponse(conn, "-ERR unknown key: "+key+"\r\n")
 	}
 }
 
+// todo: make all the handshake commands internal. should not be exposed to the user or redis clients.
 func (cmd *Cmd) handlePsyncCommand(conn *net.Conn) {
 	if len(cmd.Args) < 3 {
 		writeResponse(conn, "-ERR wrong number of arguments for 'psync' command\r\n")
